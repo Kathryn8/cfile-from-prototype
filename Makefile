@@ -1,15 +1,15 @@
 CC = gcc
 SRC = main.c
 OBJ = $(SRC:.c=.o)
-NAME = create_cfile
+NAME = create_comments
 RM = rm
 CFLAGS = -Wall -Werror -Wextra -pedantic
 
 all: $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(NAME)
+	$(CC) $(CFLAGS) $(SRC) -o $(NAME)
 
-test: $(OBJ)
-	$(CC) $(OBJ) -o $(NAME)
+test:
+	$(CC) $(SRC) -o $(NAME)
 
 clean:
 	$(RM) -f *~ $(NAME)

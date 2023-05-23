@@ -13,37 +13,20 @@
 #include <dirent.h>
 #include <stdarg.h>
 
-extern char **environ;
+#define MAX 10
+#define PRINT 0
+#define FILE 1
 
-/**
- * struct data_type - dt for short
- * @short: string
- * @long: string
- *
- * Description: stores c lang data type with corresponding long form name
- */
-typedef struct data_type
-{
-	char *short_name;
-	char *long_name;
-} dt_t;
-
-/* shell.c file contents: */
-int is_executable(char *string);
-void get_input(char **buffer, size_t *bufsize, ssize_t *getret);
-void assign_words_to_array(char *str, char *argv[]);
-int fork_child_adult(char **argv, char **environ, char **str);
-
-/* get_path.c file contents: */
-void split_string_into_words(char *string, char **words);
-char *get_env_string(char *env_key);
-char *get_executable_string(char *path, char *program_name);
-char *get_path(char **name, char *program_name);
-
-/* helper_functions.c file contents: */
-int builtin_commands(char **argv, char **environ, int *status, char *str);
-int print_env(char *envp[]);
-DIR *_opendir(char *name);
-struct dirent *_readdir(DIR *dp);
+int split_prototype_into_sections(char* prototype, char** sections);
+char *get_function_name(char *section);
+char *get_return_type(char *section);
+void rev_string(char *s);
+char *get_file_name(char *function_name);
+int check_arguments(char **av);
+void check_arg_count(int ac, char *filename);
+int set_output_steam(int file_print_flag, char *function_name);
+void generate_comments(int fd, char *return_type, char *string);
+char *get_user_prototype_string(int file_print_flag, char **prototype_string, char **av);
+void modify_prototype_string(char **prototype_string);
 
 #endif /* __MAIN_H__ */

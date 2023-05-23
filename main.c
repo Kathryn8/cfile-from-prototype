@@ -1,18 +1,4 @@
 #include "main.h"
-#define MAX 10
-#define PRINT 0
-#define FILE 1
-
-int split_prototype_into_sections(char* prototype, char** sections);
-char *get_function_name(char *section);
-char *get_return_type(char *section);
-void rev_string(char *s);
-char *get_file_name(char *function_name);
-int check_arguments(char **av);
-void check_arg_count(int ac, char *filename);
-int set_output_steam(int file_print_flag, char *function_name);
-void generate_comments(int fd, char *return_type, int file_print_flag, char **av);
-void get_user_prototype_string(int file_print_flag, char **prototype_string, char **av);
 
 /**
  * main - a program to produce a c file from prototype
@@ -31,15 +17,21 @@ int main(int ac, char **av)
 	char *variable_name = NULL;
 	char *data_type = NULL;
 	char *prototype_string = NULL;
+	char *string_for_sections;
 	int file_print_flag;
 
 	check_arg_count(ac, av[0]);
 	file_print_flag = check_arguments(av);
-	get_user_prototype_string(file_print_flag, &prototype_string, av);
-	num_sections = split_prototype_into_sections(prototype_string, sections);
+	string_for_sections = get_user_prototype_string(file_print_flag, &prototype_string, av);
+	num_sections = split_prototype_into_sections(string_for_sections, sections);
 	function_name = get_function_name(sections[0]);
 	fd = set_output_steam(file_print_flag, function_name);
 	dprintf(fd, "/**\n * %s - short description\n", function_name);
+	if (sections[1] == NULL && num_sections == 1)
+	{
+		sections[1] = "void";
+		modify_prototype_string(&prototype_string);
+	}
 	if (strcmp(sections[1], "void") == 0)
 	{
 		num_sections = 1;
@@ -55,10 +47,11 @@ int main(int ac, char **av)
 		i = i + 1;
 	}
 	return_type = get_return_type(sections[0]);
-	generate_comments(fd, return_type, file_print_flag, av);
+	generate_comments(fd, return_type, prototype_string);
 	free(function_name);
 	free(return_type);
 	free(prototype_string);
+	free(string_for_sections);
 	if (file_print_flag == FILE)
 	{
 		close(fd);
@@ -236,10 +229,10 @@ int set_output_steam(int file_print_flag, char *function_name)
 	}
 }
 
-void generate_comments(int fd, char *return_type, int file_print_flag, char **av)
+void generate_comments(int fd, char *return_type, char *string)
 {
 	dprintf(fd, " *\n * Return: type is %s\n */\n\n", return_type);
-	dprintf(fd, "%s\n", file_print_flag == PRINT ? av[1] : av[2]);
+	dprintf(fd, "%s\n", string);
 	if (strncmp(return_type, "void", 4) == 0)
 	{
 		dprintf(fd, "{\n\t;\n}\n");
@@ -251,8 +244,10 @@ void generate_comments(int fd, char *return_type, int file_print_flag, char **av
 	}
 }
 
-void get_user_prototype_string(int file_print_flag, char **prototype_string, char **av)
+char *get_user_prototype_string(int file_print_flag, char **prototype_string, char **av)
 {
+	char *string_for_sections = NULL;
+
 	if (file_print_flag == PRINT)
 	{
 		*prototype_string = strdup(av[1]);
@@ -261,4 +256,26 @@ void get_user_prototype_string(int file_print_flag, char **prototype_string, cha
 	{
 		*prototype_string = strdup(av[2]);
 	}
+	string_for_sections = strdup(*prototype_string);
+	return (string_for_sections);
+}
+
+void modify_prototype_string(char **prototype_string)
+{
+	char *ptr;
+	size_t size, len, index;
+
+	ptr = strstr(*prototype_string, "()");
+	if (ptr == NULL)
+	{
+		printf("Please provide a function prototype in the correct format (parameter format error)\n");
+		exit (1);
+	}
+	len = strlen(*prototype_string);
+	size = (sizeof(char) * len + 4);
+	*prototype_string = realloc(*prototype_string, size);
+	index = len - 1;
+	*(*prototype_string + index) = '\0';
+	strcat(*prototype_string, "void");
+	strcat(*prototype_string, ")");
 }
