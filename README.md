@@ -7,9 +7,7 @@ The first trimester of Holberton is focused on learning C language and many of t
 `git clone` into your local directory and type `make`. This will create an executable called create_cfile. To be able to access the program from any directory, add it's location to your PATH variable or move the executable to one of directories already in your PATH. I moved mine to `/usr/local/bin`.
 
 ### Usage
-
 Function prototype must always be in double quotes.
-
 `$ ./create_comments "void print_error(stack_t **stack, unsigned int line_num)"`
 This will produce the following to standard output:
 ```
@@ -28,5 +26,6 @@ void print_error(stack_t **stack, unsigned int line_num)
 ```
 
 You can also use the option `-f` to create a file with the function name:
+<img width="915" alt="Screen Shot 2023-05-23 at 7 00 41 pm" src="https://github.com/Kathryn8/cfile-from-prototype/assets/124414205/530cbb53-3a12-4d08-9e0a-cdcfb701f2f7">
 
 
