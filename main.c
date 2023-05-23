@@ -1,11 +1,18 @@
 #include "main.h"
 #define MAX 10
+#define PRINT 0
+#define FILE 1
 
 int split_prototype_into_sections(char* prototype, char** sections);
 char *get_function_name(char *section);
 char *get_return_type(char *section);
 void rev_string(char *s);
 char *get_file_name(char *function_name);
+int check_arguments(char **av);
+void check_arg_count(int ac, char *filename);
+int set_output_steam(int file_print_flag, char *function_name);
+void generate_comments(int fd, char *return_type, int file_print_flag, char **av);
+void get_user_prototype_string(int file_print_flag, char **prototype_string, char **av);
 
 /**
  * main - a program to produce a c file from prototype
@@ -23,33 +30,20 @@ int main(int ac, char **av)
 	char *return_type = NULL;
 	char *variable_name = NULL;
 	char *data_type = NULL;
-	char *temp_prototype = NULL;
-	char *file_name = NULL;
+	char *prototype_string = NULL;
+	int file_print_flag;
 
-	if (ac != 2)
-	{
-		printf("\n\t\tUsage: %s \"function prototype in double quotes\"\n\n", av[0]);
-		return (1);
-	}
-	if (strchr(av[1], '(') == NULL || strchr(av[1], ')') == NULL)
-	{
-		printf("Please provide a function prototype in the correct format\n");
-		return (1);
-	}
-	temp_prototype = strdup(av[1]);
-	num_sections = split_prototype_into_sections(temp_prototype, sections);
+	check_arg_count(ac, av[0]);
+	file_print_flag = check_arguments(av);
+	get_user_prototype_string(file_print_flag, &prototype_string, av);
+	num_sections = split_prototype_into_sections(prototype_string, sections);
 	function_name = get_function_name(sections[0]);
-	return_type = get_return_type(sections[0]);
-	file_name = get_file_name(function_name);
-	fd = open(file_name, O_CREAT | O_WRONLY, 0664);
-	free(file_name);
-	if (fd == -1)
-	{
-		perror("open");
-		return (1);
-	}
-	dprintf(fd, "\t\t/********** %s.c file **********/\n\n", function_name);
+	fd = set_output_steam(file_print_flag, function_name);
 	dprintf(fd, "/**\n * %s - short description\n", function_name);
+	if (strcmp(sections[1], "void") == 0)
+	{
+		num_sections = 1;
+	}
 	i = 1;
 	while (i < num_sections)
 	{
@@ -60,14 +54,15 @@ int main(int ac, char **av)
 		free(data_type);
 		i = i + 1;
 	}
-	dprintf(fd, " *\n * Return: type is %s\n */\n\n", return_type);
-	dprintf(fd, "%s\n", av[1]);
-	dprintf(fd, "{\n\t%sreturn_value;\n\n", return_type);
-	dprintf(fd, "\treturn (return_value);\n}\n");
+	return_type = get_return_type(sections[0]);
+	generate_comments(fd, return_type, file_print_flag, av);
 	free(function_name);
 	free(return_type);
-	free(temp_prototype);
-	close(fd);
+	free(prototype_string);
+	if (file_print_flag == FILE)
+	{
+		close(fd);
+	}
 	return (0);
 }
 
@@ -182,4 +177,88 @@ char *get_file_name(char *function_name)
 	strcat(name, function_name);
 	strcat(name, ".c");
 	return (name);
+}
+
+int check_arguments(char **av)
+{
+	int flag;
+	char *input_string;
+
+	if (strcmp(av[1], "-f") == 0)
+	{
+		flag = FILE;
+		input_string = av[2];
+	}
+	else
+	{
+		flag = PRINT;
+		input_string = av[1];
+	}
+	if (strchr(input_string, '(') == NULL || strchr(input_string, ')') == NULL)
+	{
+		printf("Please provide a function prototype in the correct format\n");
+		exit (1);
+	}
+	return (flag);
+}
+void check_arg_count(int ac, char *filename)
+{
+	if (ac < 2 || ac > 3)
+	{
+		printf("\n\t\tUsage: %s \"function prototype in double quotes\"\n", filename);
+		printf("\t\toption '-f' to create a file, default prints to standard output\n\n");
+		exit (1);
+	}
+	;
+}
+
+int set_output_steam(int file_print_flag, char *function_name)
+{
+	char *file_name;
+	int fd;
+
+	if (file_print_flag == FILE)
+	{
+		file_name = get_file_name(function_name);
+		fd = open(file_name, O_CREAT | O_EXCL | O_WRONLY, 0664);
+		free(file_name);
+		if (fd == -1)
+		{
+			perror("Cannot create file");
+			exit (1);
+		}
+		return (fd);
+	}
+	else
+	{
+		fd = STDOUT_FILENO;
+		return (fd);
+	}
+}
+
+void generate_comments(int fd, char *return_type, int file_print_flag, char **av)
+{
+	dprintf(fd, " *\n * Return: type is %s\n */\n\n", return_type);
+	dprintf(fd, "%s\n", file_print_flag == PRINT ? av[1] : av[2]);
+	if (strncmp(return_type, "void", 4) == 0)
+	{
+		dprintf(fd, "{\n\t;\n}\n");
+	}
+	else
+	{
+		dprintf(fd, "{\n\t%sreturn_value;\n\n", return_type);
+		dprintf(fd, "\treturn (return_value);\n}\n");
+	}
+}
+
+void get_user_prototype_string(int file_print_flag, char **prototype_string, char **av)
+{
+	if (file_print_flag == PRINT)
+	{
+		*prototype_string = strdup(av[1]);
+	}
+	else
+	{
+		*prototype_string = strdup(av[2]);
+	}
 }
